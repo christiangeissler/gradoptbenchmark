@@ -1,0 +1,8 @@
+sklearn
+numpy
+scipydirect
+bayesian-optimization
+keras
+tensorflow
+smac
+dlib

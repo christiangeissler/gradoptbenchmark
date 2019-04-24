@@ -1,0 +1,7 @@
+*__pycache__
+.*
+debug.json
+*.log
+*.json
+# Except this file
+!.gitignore

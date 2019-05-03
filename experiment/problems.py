@@ -2,9 +2,10 @@
 import math
 #3rd party imports (from packages, the environment)
 import numpy as np
-from sklearn.model_selection import cross_val_score
+from sklearn.model_selection import cross_val_score, KFold
 from sklearn.kernel_ridge import KernelRidge
 from sklearn.gaussian_process.kernels import RBF
+from sklearn import linear_model
 from sklearn.datasets import fetch_openml
 from sklearn.preprocessing import LabelEncoder
 import csv
@@ -14,6 +15,109 @@ from util.env import ProblemWrapper
 
 #used for caching datasets downloaded from somewhere else
 DATASET_CACHE_HOME = os.path.normpath('.tmp/')
+
+
+class WeightedLinearMLProblemTemplate():
+    def __init__(self):
+        super(WeightedLinearMLProblemTemplate, self).__init__()
+        
+    def _function(self, x):
+        thetaParam = np.power(10, x[0])
+        lambdaParam = np.power(10, x[1])
+        x = x[2:]
+        (Features, targets) = self._prepareDataset()
+        kf = KFold(n_splits = 10, shuffle = True)
+        scoreList = list()
+        for train_index, test_index in kf.split(Features):
+            regressor = KernelRidge(alpha=lambdaParam, kernel='rbf', gamma=thetaParam)
+            regressor.fit(X=Features[train_index], y=targets[train_index], sample_weight=x[train_index])
+            scoreList.append(regressor.score(X=Features[test_index],y=targets[test_index]))
+        return np.mean(scoreList)
+
+    
+    def _domain(self):
+        (Features, targets) = self._prepareDataset()
+        dimension = np.shape(targets)[0]
+        hpranges = [[-2.,4.],[-5.,5.]]
+        weights = [[0,1] for i in range(dimension)]
+        array = np.array(hpranges+weights)
+        #array = np.array(hpranges)
+        return array
+        
+    def cleanData( self, X , y ):
+        mask = np.isnan( X )
+        #print("Missing values: "+str(np.sum(mask)))
+        mask = np.invert( np.any( mask, axis = 1 ) )
+        X = X[mask,:]
+        y = y[mask]
+        
+        mask = np.isinf( X )
+        #print("Infinite values: "+str(np.sum(mask)))
+        mask = np.invert( np.any( mask, axis = 1 ) )
+        X = X[mask,:]
+        y = y[mask]
+        return (X,y)
+        
+class AutoMPGHD(WeightedLinearMLProblemTemplate, ProblemWrapper):
+    def __init__(self):
+        super(AutoMPGHD, self).__init__()
+        dataset = fetch_openml(data_id=196, data_home=DATASET_CACHE_HOME)
+        self.dataset = self.cleanData(X=dataset.data,y=dataset.target)
+
+    def _prepareDataset(self):
+        return self.dataset
+        
+class BreastCancerHD(WeightedLinearMLProblemTemplate, ProblemWrapper):
+    def __init__(self):
+        super(BreastCancerHD, self).__init__()
+        dataset = fetch_openml(data_id=13, data_home=DATASET_CACHE_HOME)
+        (X,y) = self.cleanData(X=dataset.data,y=dataset.target)
+        le = LabelEncoder()
+        y = le.fit_transform(y)
+        self.dataset = (X,y)
+        
+    def _prepareDataset(self):
+        return self.dataset
+        
+class SlumpHD(WeightedLinearMLProblemTemplate, ProblemWrapper):
+    def __init__(self):
+        super(SlumpHD, self).__init__()
+        dataset = fetch_openml(data_id=41490, data_home=DATASET_CACHE_HOME)
+        self.dataset = self.cleanData(X=dataset.data,y=dataset.target)
+
+    def _prepareDataset(self):
+        return self.dataset
+    
+class YachtHD(WeightedLinearMLProblemTemplate, ProblemWrapper):
+    def __init__(self):
+        super(YachtHD, self).__init__()
+        dataset = list()
+        with open(os.path.normpath('./data/yacht/yacht_hydrodynamics.data')) as csv_file:
+            csv_reader = csv.reader(csv_file, delimiter=' ')
+            for row in csv_reader:
+                #skip empty rows
+                if len(row) == 0:
+                    continue
+                try:
+                    dataset.append([float(val) for val in row if not(val=='')])
+                except Exception as exceptionInstance:
+                    print(exceptionInstance)
+                
+        dataset = np.array(dataset)
+        #separate features and target values
+        self.dataset = self.cleanData(X=dataset[:,0:-1],y=dataset[:,-1])
+        
+    def _prepareDataset(self):
+        return self.dataset
+        
+class HousingHD(WeightedLinearMLProblemTemplate, ProblemWrapper):
+    def __init__(self):
+        super(HousingHD, self).__init__()
+        dataset = fetch_openml(data_id=531, data_home=DATASET_CACHE_HOME)
+        self.dataset = self.cleanData(X=dataset.data,y=dataset.target)
+
+    def _prepareDataset(self):
+        return self.dataset
 
 #Objective functions (actually the whole problem, function plus input domain range)
 class RBFRRProblemTemplate():
@@ -52,7 +156,6 @@ class RBFRRProblemTemplate():
         X = X[mask,:]
         y = y[mask]
         return (X,y)
-    LabelEncoder
     
     
 class AutoMPG(RBFRRProblemTemplate, ProblemWrapper):
@@ -297,13 +400,14 @@ class TestProblem2(ProblemWrapper):
 
 #Kernel Ridge Regression Problems
 REGRESSION = {"housing":Housing, "yacht":Yacht, "slump":Slump, "breastcancer":BreastCancer, "autompg":AutoMPG}
-
+REGRESSION_HD = {"housinghd":HousingHD, "yachthd":YachtHD, "slumphd":SlumpHD, "breastcancerhd":BreastCancerHD, "autompghd":AutoMPGHD}
 
 #Synthetic benchmark as in Global optimization of Lipschitz functions        
 SYNTHETIC_ADALIPO = {"holdertable":HolderTable, "rosenbrock":Rosenbrock, "sphere":Sphere, "linearslope":LinearSlope, "debn1":DebN1}
 #Synthetic benchmark set as in 2016 A Ranking Approach to Global Optimization Cedriv Malherbe
 SYNTHETIC_RGO = {"branin-hoo":BraninHoo, "himmelblau":Himmelblau, "styblinski":Styblinski, "holdertable":HolderTable, "levyn13":LevyN13, "rosenbrock":Rosenbrock, "mishran2":MishraN2, "linearslope":LinearSlope, "debn1":DebN1, "griewankn4":GriewankN4}
 SYNTHETIC_ALL = {"holdertable":HolderTable, "rosenbrock":Rosenbrock, "sphere":Sphere, "linearslope":LinearSlope, "debn1":DebN1, "spherehighdim":SphereHighDim, "branin-hoo":BraninHoo, "himmelblau":Himmelblau, "styblinski":Styblinski, "levyn13":LevyN13, "mishran2":MishraN2, "griewankn4":GriewankN4 }
+
 
 #A simple function test testset
 TEST = {"test1":TestProblem, "test2":TestProblem2}

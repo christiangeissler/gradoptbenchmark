@@ -8,9 +8,8 @@ class GradSearch(object):
     The hierarchical optimistic optimization algorithm.
     """
 
-    def __init__(self,d, n, delta, covering_generator_function,environment_function):
-        self.covering_generator_function = covering_generator_function
-        self.space = covering_generator_function(1, 1)
+    def __init__(self,d, n, delta, covering,environment_function):
+        self.space = covering
         self.environment_function = environment_function
         self.x =(1.0*self.space.upper + self.space.lower) / 2.0
         self.f_x=self.environment_function(self.x)

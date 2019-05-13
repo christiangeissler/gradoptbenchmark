@@ -160,16 +160,15 @@ if ( True == SMAC_ENABLED ):
                 maxfun=iterations,   # maximum number of evaluations
                 rng=3)
             return problem
-            
+                  
 if ( GRADOPT_ENABLED ):       
     class GradOpt(OptimizerWrapper):
         def apply(self, problem, iterations):  
             X = problem.getDomain()
             minValues = np.min(X,axis=1)
             maxValues = np.max(X,axis=1)
-            partitioner = Partitioner.Partitioner(min_values=minValues, max_values=maxValues)
             #n=iteration-1 since somehow gradopt uses one more iteration than intended.
-            opt = GradSearch.GradSearch(d=np.shape(X)[0], n=iterations, delta=5, covering_generator_function=partitioner.halve_one_by_one,environment_function=problem.evaluate)
+            opt = GradSearch.GradSearch(d=np.shape(X)[0], n=iterations-1, delta=5, covering=Partitioner.Covering(lowers=minValues, uppers=maxValues),environment_function=problem.evaluate)
             opt.run_search()
             return problem
 '''   

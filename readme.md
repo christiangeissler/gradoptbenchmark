@@ -2,6 +2,8 @@
 
 This benchmark is based (but heavily modified) on the setup described in Global optimization of lipschitz functions (C. Malherbe et. al. 2017) and used in a poster submission of a new global optimization approach called gradopt. We publish it here for the poster submission "Graduated Optimization of Black-Box Function" @ ICML 2019 Workshop on AutoML.
 
+For more information or citations please consider our workshop paper https://arxiv.org/abs/1906.01279 .
+
 #Usage#
 The experiment consists of two different parts:
 

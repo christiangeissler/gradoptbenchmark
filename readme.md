@@ -1,10 +1,10 @@
-#Global Optimization Benchmark#
+=Global Optimization Benchmark=
 
 This benchmark is based (but heavily modified) on the setup described in Global optimization of lipschitz functions (C. Malherbe et. al. 2017) and used in a poster submission of a new global optimization approach called gradopt. We publish it here for the poster submission "Graduated Optimization of Black-Box Function" @ ICML 2019 Workshop on AutoML.
 
 For more information or citations please consider our workshop paper https://arxiv.org/abs/1906.01279 .
 
-#Usage#
+=Usage=
 The experiment consists of two different parts:
 
 Experiment.py - running the optimizers on the problems, collecting the data.
@@ -18,10 +18,10 @@ docker run -d -it --name=$USER-$(uuidgen)-GlobalLipschitz --log-opt max-size=10m
 
 The results will be saved in a json file (results.json) that will be opened by the jupyther notebook "Experiments.ipynb". The notebook will read the results, analyze it (calculate target values) and outputs the refined results as a table.
 
-#Extention#
+=Extention=
 If you want to add your own optimizer, just implement a wrapper in ./experiment/optimizers.py inheriting from OptimizerWrapper. All optimizers that inherit from that class are loaded when Experiment.py is started and will be executed during the experiment.
 
-#Acknowledgement#
+=Acknowledgement=
 This work is supported in part by the German Federal Ministry of Education and Research
 (BMBF) under the grant number 01IS16046.
 
